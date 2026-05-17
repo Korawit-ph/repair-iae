@@ -1,0 +1,47 @@
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const card = (label, value, color) => (
+  <div style={{ background: '#fff', borderRadius: 10, padding: '1.25rem', border: '1px solid #e2e8f0' }}>
+    <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>{label}</div>
+    <div style={{ fontSize: 28, fontWeight: 700, color }}>{value}</div>
+  </div>
+);
+
+export default function Dashboard() {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('repair_token');
+    axios.get('/api/reports/summary', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setStats(r.data));
+  }, []);
+
+  if (!stats) return <div style={{ padding: '2rem' }}>กำลังโหลด...</div>;
+
+  return (
+    <div style={{ padding: '1.5rem' }}>
+      <h2 style={{ margin: '0 0 1.5rem', fontSize: 18, fontWeight: 700 }}>ภาพรวมระบบ</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
+        {card('งานทั้งหมด', stats.total, '#1e293b')}
+        {card('รอดำเนินการ', stats.pending, '#f59e0b')}
+        {card('กำลังดำเนินการ', stats.in_progress, '#3b82f6')}
+        {card('รอรีวิว', stats.waiting_review, '#8b5cf6')}
+        {card('ถูก Return', stats.returned, '#ef4444')}
+        {card('เสร็จสิ้น', stats.completed, '#16a34a')}
+      </div>
+      <div style={{ background: '#fff', borderRadius: 10, padding: '1.25rem', border: '1px solid #e2e8f0' }}>
+        <div style={{ fontWeight: 600, marginBottom: 12 }}>งานรายเดือน</div>
+        {Object.entries(stats.monthly || {}).sort().map(([month, count]) => (
+          <div key={month} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <div style={{ width: 80, fontSize: 13, color: '#64748b' }}>{month}</div>
+            <div style={{ flex: 1, background: '#f1f5f9', borderRadius: 4, height: 20, position: 'relative' }}>
+              <div style={{ background: '#0ea5e9', borderRadius: 4, height: '100%', width: `${Math.min(count / Math.max(...Object.values(stats.monthly)) * 100, 100)}%` }} />
+            </div>
+            <div style={{ width: 30, fontSize: 13, fontWeight: 600 }}>{count}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

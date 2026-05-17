@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: repair-iae-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: SUPABASE_URL
+        value: https://lxdaoentzhfhnsbutyqk.supabase.co
+      - key: SUPABASE_KEY
+        value: sb_publishable_DQSzCg8Ra19H9N4kAx-MWQ_XlMeDPnt
+      - key: JWT_SECRET
+        value: repair-iae-secret-key-2024
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+
+  - type: web
+    name: repair-iae-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_API_URL
+        fromService:
+          name: repair-iae-backend
+          type: web
+          property: host
