@@ -17,8 +17,12 @@ export default function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('repair_user');
-    if (saved) setUser(JSON.parse(saved));
+    try {
+      const saved = localStorage.getItem('repair_user');
+      if (saved && saved !== 'undefined') setUser(JSON.parse(saved));
+    } catch(e) {
+      localStorage.removeItem('repair_user');
+    }
   }, []);
 
   const login = (userData, token) => {
