@@ -9,12 +9,21 @@ export default function RepairList({ user }) {
   const [repairs, setRepairs] = useState([]);
   const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
+  const token = localStorage.getItem('repair_token');
+  const headers = { Authorization: `Bearer ${token}` };
 
-  useEffect(() => {
-    const token = localStorage.getItem('repair_token');
-    axios.get('/api/repairs', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => setRepairs(r.data));
-  }, []);
+  const load = () => {
+    axios.get('/api/repairs', { headers }).then(r => setRepairs(r.data));
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleDelete = async (id, e) => {
+    e.stopPropagation();
+    if (!window.confirm('ลบรายการนี้ออกจากระบบ?')) return;
+    await axios.delete(`/api/repairs/${id}`, { headers });
+    load();
+  };
 
   const filtered = filter === 'all' ? repairs : repairs.filter(r => r.status === filter);
 
@@ -34,17 +43,19 @@ export default function RepairList({ user }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
             <tr style={{ background: '#f8fafc' }}>
-              {['เลขที่', 'ผู้แจ้ง', 'รายละเอียด', 'ผู้รับผิดชอบ', 'วันที่', 'สถานะ', ''].map(h => (
+              {['เลขที่', 'ผู้แจ้ง', 'สถานที่', 'อุปกรณ์', 'รายละเอียด', 'ผู้รับผิดชอบ', 'วันที่', 'สถานะ', ''].map(h => (
                 <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 12, color: '#64748b', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filtered.map(r => (
-              <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+              <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} onClick={() => navigate(`/repairs/${r.id}`)}>
                 <td style={{ padding: '12px', fontWeight: 600 }}>#{r.ticket_no}</td>
                 <td style={{ padding: '12px', color: '#475569' }}>{r.reporter_name || '-'}</td>
-                <td style={{ padding: '12px', color: '#475569', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.detail || '-'}</td>
+                <td style={{ padding: '12px', color: '#475569' }}>{r.location || '-'}</td>
+                <td style={{ padding: '12px', color: '#475569' }}>{r.device_name || '-'}</td>
+                <td style={{ padding: '12px', color: '#475569', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.detail || '-'}</td>
                 <td style={{ padding: '12px', color: '#475569' }}>{r.assigned_user?.name || '-'}</td>
                 <td style={{ padding: '12px', color: '#94a3b8', fontSize: 12 }}>{r.created_at?.slice(0, 10)}</td>
                 <td style={{ padding: '12px' }}>
@@ -52,16 +63,24 @@ export default function RepairList({ user }) {
                     {statusLabel[r.status]}
                   </span>
                 </td>
-                <td style={{ padding: '12px' }}>
-                  <button onClick={() => navigate(`/repairs/${r.id}`)}
-                    style={{ background: '#f1f5f9', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer' }}>
-                    ดูรายละเอียด
-                  </button>
+                <td style={{ padding: '12px' }} onClick={e => e.stopPropagation()}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => navigate(`/repairs/${r.id}`)}
+                      style={{ background: '#f1f5f9', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer' }}>
+                      ดู
+                    </button>
+                    {user.role === 'snr_engineer' && (
+                      <button onClick={(e) => handleDelete(r.id, e)}
+                        style={{ background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer' }}>
+                        ลบ
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>ไม่มีรายการ</td></tr>
+              <tr><td colSpan={9} style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>ไม่มีรายการ</td></tr>
             )}
           </tbody>
         </table>
