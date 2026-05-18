@@ -11,7 +11,7 @@ import Users from './pages/Users';
 import Reports from './pages/Reports';
 import Layout from './components/Layout';
 
-axios.defaults.baseURL = 'https://repair-iae-backend.onrender.com';
+axios.defaults.baseURL = 'https://repair-iae-backend-2.onrender.com';
 
 export default function App() {
   const [user, setUser] = useState(null);
