@@ -6,25 +6,12 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// สร้างโฟลเดอร์ uploads ถ้าไม่มี
-if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
-app.use('/uploads', express.static('uploads'));
-
-const multerStorage = multer.diskStorage({
-  destination: 'uploads/',
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, Date.now() + ext);
-  }
-});
-const upload = multer({ storage: multerStorage, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const JWT_SECRET = process.env.JWT_SECRET || 'repair-iae-secret-2024';
@@ -90,8 +77,21 @@ app.delete('/api/users/:id', authMiddleware, async (req, res) => {
 // ==================== REPAIRS ====================
 app.post('/api/repairs/submit', upload.single('file'), async (req, res) => {
   const { reporter_name, reporter_email, report_date, detail, location, device_name } = req.body;
-  const file_url = req.file ? `/uploads/${req.file.filename}` : null;
-  const file_name = req.file ? req.file.originalname : null;
+  
+  let file_url = null;
+  let file_name = null;
+
+  if (req.file) {
+    file_name = req.file.originalname;
+    const fileName = `${Date.now()}_${file_name}`;
+    const { error: uploadError } = await supabase.storage
+      .from('Repair')
+      .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
+    if (!uploadError) {
+      const { data: urlData } = supabase.storage.from('Repair').getPublicUrl(fileName);
+      file_url = urlData.publicUrl;
+    }
+  }
 
   const { data, error } = await supabase.from('repairs').insert({
     reporter_name, reporter_email, report_date, detail, location, device_name, file_url, file_name, status: 'pending'
@@ -181,7 +181,6 @@ app.put('/api/repairs/:id/review', authMiddleware, async (req, res) => {
   res.json(data);
 });
 
-// ลบงานซ่อม (snr_engineer เท่านั้น)
 app.delete('/api/repairs/:id', authMiddleware, async (req, res) => {
   if (req.user.role !== 'snr_engineer') return res.status(403).json({ error: 'ไม่มีสิทธิ์' });
   const { error } = await supabase.from('repairs').delete().eq('id', req.params.id);
