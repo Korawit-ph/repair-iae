@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import axios from 'axios';
 import ReportForm from './pages/ReportForm';
 import TrackStatus from './pages/TrackStatus';
 import Login from './pages/Login';
@@ -39,12 +40,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* หน้าสาธารณะ */}
         <Route path="/report" element={<ReportForm />} />
         <Route path="/track" element={<TrackStatus />} />
         <Route path="/login" element={<Login onLogin={login} />} />
-
-        {/* หน้าทีมงาน */}
         {user ? (
           <Route path="/" element={<Layout user={user} onLogout={logout} />}>
             <Route index element={<Dashboard />} />
