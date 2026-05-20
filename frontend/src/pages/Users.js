@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
+import { LangContext } from '../App';
+import t from '../i18n';
 
 const roleLabel = { snr_engineer: 'Snr.Engineer', engineer: 'Engineer', officer: 'Officer', labgm: 'LabGM' };
 
@@ -9,6 +11,8 @@ export default function Users() {
   const [form, setForm] = useState({ name: '', email: '', role: 'engineer', password: '' });
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const { lang } = useContext(LangContext);
+  const tx = t[lang];
   const token = localStorage.getItem('repair_token');
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -30,7 +34,7 @@ export default function Users() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('ลบผู้ใช้นี้?')) return;
+    if (!window.confirm(lang === 'th' ? 'ลบผู้ใช้นี้?' : 'Delete this user?')) return;
     await axios.delete(`/api/users/${id}`, { headers });
     load();
   };
@@ -41,27 +45,27 @@ export default function Users() {
   return (
     <div style={{ padding: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>จัดการผู้ใช้งาน</h2>
-        <button onClick={() => setShowAdd(true)} style={btnStyle('#0ea5e9')}>+ เพิ่มผู้ใช้</button>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{tx.manageUsers}</h2>
+        <button onClick={() => setShowAdd(true)} style={btnStyle('#0ea5e9')}>{tx.addUser}</button>
       </div>
 
       {showAdd && (
         <div style={{ background: '#fff', borderRadius: 10, padding: '1.5rem', border: '1px solid #e2e8f0', marginBottom: 16 }}>
-          <h3 style={{ margin: '0 0 16px' }}>เพิ่มผู้ใช้ใหม่</h3>
+          <h3 style={{ margin: '0 0 16px' }}>{tx.addUser}</h3>
           <form onSubmit={handleAdd}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-              <div><label style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>ชื่อ</label><input style={inputStyle} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
-              <div><label style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>อีเมล</label><input type="email" style={inputStyle} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
-              <div><label style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>รหัสผ่าน</label><input type="password" style={inputStyle} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} /></div>
-              <div><label style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>Role</label>
+              <div><label style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>{tx.name}</label><input style={inputStyle} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
+              <div><label style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>{tx.email}</label><input type="email" style={inputStyle} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
+              <div><label style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>{tx.password}</label><input type="password" style={inputStyle} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} /></div>
+              <div><label style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>{tx.role}</label>
                 <select style={inputStyle} value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
                   {Object.entries(roleLabel).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button type="submit" style={btnStyle('#16a34a')}>บันทึก</button>
-              <button type="button" onClick={() => setShowAdd(false)} style={btnStyle('#94a3b8')}>ยกเลิก</button>
+              <button type="submit" style={btnStyle('#16a34a')}>{tx.save}</button>
+              <button type="button" onClick={() => setShowAdd(false)} style={btnStyle('#94a3b8')}>{tx.cancel}</button>
             </div>
           </form>
         </div>
@@ -71,7 +75,7 @@ export default function Users() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
             <tr style={{ background: '#f8fafc' }}>
-              {['ชื่อ', 'อีเมล', 'Role', ''].map(h => (
+              {[tx.name, tx.email, tx.role, ''].map(h => (
                 <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>{h}</th>
               ))}
             </tr>
@@ -95,9 +99,9 @@ export default function Users() {
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {editId === u.id
-                      ? <><button onClick={() => handleEdit(u.id)} style={btnStyle('#16a34a')}>บันทึก</button><button onClick={() => setEditId(null)} style={btnStyle('#94a3b8')}>ยกเลิก</button></>
-                      : <><button onClick={() => { setEditId(u.id); setEditForm({ name: u.name, email: u.email, role: u.role }); }} style={btnStyle('#0ea5e9')}>แก้ไข</button>
-                         <button onClick={() => handleDelete(u.id)} style={btnStyle('#ef4444')}>ลบ</button></>}
+                      ? <><button onClick={() => handleEdit(u.id)} style={btnStyle('#16a34a')}>{tx.save}</button><button onClick={() => setEditId(null)} style={btnStyle('#94a3b8')}>{tx.cancel}</button></>
+                      : <><button onClick={() => { setEditId(u.id); setEditForm({ name: u.name, email: u.email, role: u.role }); }} style={btnStyle('#0ea5e9')}>{tx.edit}</button>
+                         <button onClick={() => handleDelete(u.id)} style={btnStyle('#ef4444')}>{tx.delete}</button></>}
                   </div>
                 </td>
               </tr>
